@@ -1,0 +1,33 @@
+name: Daily Close Price Auto Updater
+
+on:
+  schedule:
+    - cron: '5 9 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  update-portfolio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 파이썬 3.10 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 필수 라이브러리 설치
+        run: |
+          pip install pytz
+
+      - name: 네이버 증권 공식 종가 수집 및 자산 재계산 실행
+        run: |
+          python updater.py
+
+      - name: 변경된 대시보드 파일 커밋 및 자동 푸시
+        run: |
+          git config --global user.name "Portfolio-Bot"
+          git config --global user.email "bot@portfolio.local"
+          git add index.html etf_portfolio_dashboard_final.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 [자동 갱신] $(date +'%Y-%m-%d') 네이버 공식 종가 및 평가금액 반영" && git push)
